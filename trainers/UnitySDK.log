@@ -1,0 +1,119 @@
+13.11.2018 21:21:36
+ 
+Log
+AddObject Red_Tank2  (GABrain)
+
+Log
+AddObject Red_Tank21  (GABrain)
+
+Log
+AddObject Blue_Tank27  (PPOBrain)
+
+Log
+AddObject Red_Tank26  (GABrain)
+
+Log
+AddObject Red_Tank23  (GABrain)
+
+Log
+AddObject Red_Tank16  (GABrain)
+
+Log
+AddObject Blue_Tank37  (PPOBrain)
+
+Log
+AddObject Red_Tank36  (GABrain)
+
+Log
+AddObject Blue_Tank25  (PPOBrain)
+
+Log
+AddObject Blue_Tank38  (PPOBrain)
+
+Log
+AddObject Blue_Tank17  (PPOBrain)
+
+Log
+AddObject Red_Tank15  (GABrain)
+
+Log
+AddObject Blue_Tank34  (PPOBrain)
+
+Log
+AddObject Blue_Tank15  (PPOBrain)
+
+Log
+AddObject Blue_Tank2  (PPOBrain)
+
+Log
+AddObject Blue_Tank34  (PPOBrain)
+
+Log
+[KILL]: Blue_Tank34  (PPOBrain) (RED 0-1 BLUE)
+
+Log
+AddObject Red_Tank16  (GABrain)
+
+Log
+[KILL]: Red_Tank16  (GABrain) (RED 1-1 BLUE)
+
+Log
+AddObject Blue_Tank6  (PPOBrain)
+
+Log
+[KILL]: Blue_Tank6  (PPOBrain) (RED 1-2 BLUE)
+
+Log
+AddObject Blue_Tank22  (PPOBrain)
+
+Log
+[KILL]: Blue_Tank22  (PPOBrain) (RED 1-3 BLUE)
+
+Log
+AddObject Blue_Tank12  (PPOBrain)
+
+Log
+[KILL]: Blue_Tank12  (PPOBrain) (RED 1-4 BLUE)
+
+Log
+AddObject Red_Tank8  (GABrain)
+
+Log
+[KILL]: Red_Tank8  (GABrain) (RED 0-4 BLUE)
+
+Log
+AddObject Blue_Tank32  (PPOBrain)
+
+Log
+[KILL]: Blue_Tank32  (PPOBrain) (RED 0-3 BLUE)
+
+Log
+AddObject Blue_Tank23  (PPOBrain)
+
+Log
+[KILL]: Blue_Tank23  (PPOBrain) (RED 0-4 BLUE)
+
+Log
+AddObject Red_Tank37  (GABrain)
+
+Log
+[KILL]: Red_Tank37  (GABrain) (RED -1-4 BLUE)
+
+Log
+AddObject Blue_Tank37  (PPOBrain)
+
+Log
+[KILL]: Blue_Tank37  (PPOBrain) (RED -1-5 BLUE)
+
+Log
+AddObject Red_Tank22  (GABrain)
+
+Log
+[KILL]: Red_Tank22  (GABrain) (RED 0-5 BLUE)
+
+Log
+AddObject Red_Tank25  (GABrain)
+
+Log
+[KILL]: Red_Tank25  (GABrain) (RED -1-5 BLUE)
+
