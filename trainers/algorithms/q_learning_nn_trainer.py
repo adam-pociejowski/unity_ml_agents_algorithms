@@ -66,8 +66,8 @@ class QLearningNNTrainer:
                                                          feed_dict={self.features: self.observations})
         return self._append_random_actions(self.actions)
 
-    def post_step_actions(self, new_observation, rewards):
-        agent_observation_reshaped = self._reshape_observations(new_observation)
+    def post_step_actions(self, observations, actions, rewards, new_observations):
+        agent_observation_reshaped = self._reshape_observations(new_observations)
         new_Q = self.sess.run(self.Q, feed_dict={self.features: agent_observation_reshaped})
         for index in range(self.agents_num):
             self.agentsTargetQ[index][self.actions[index]] = rewards[index] + self.discount_rate * np.max(new_Q[index])

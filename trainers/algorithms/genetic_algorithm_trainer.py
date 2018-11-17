@@ -1,6 +1,7 @@
 import random
 import numpy as np
 import pandas as pd
+import tensorflow as tf
 
 
 class GeneticAlgorithmTrainer:
@@ -25,6 +26,7 @@ class GeneticAlgorithmTrainer:
 
         self.population = []
         self.prepare_init_model()
+        self.summary_writer = tf.summary.FileWriter("summary/genetic")
         # self.load_model()
 
     @staticmethod
@@ -94,7 +96,10 @@ class GeneticAlgorithmTrainer:
             actions.append(self.predict_using_neural_network(observation[index], self.population[index]))
         return actions
 
-    def post_step_actions(self, new_observation, rewards):
+    def append_summary(self, mean_reward, max_reward, step):
+        pass
+
+    def post_step_actions(self, observations, actions, rewards, new_observations):
         pass
 
     def set_session(self, sess):

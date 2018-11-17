@@ -11,7 +11,7 @@ class ExperienceBatch:
 
 class QLearningNNTrainerWithExperience:
     def __init__(self, brain_name, input_num, output_num, agents_num, learning_rate=0.001, random_action_chance=0.1,
-                 discount_rate=0.99, experience_batch_size=20):
+                 discount_rate=0.9, experience_batch_size=20):
         self.tag = '[QLearningNNTrainer - ' + brain_name + ']: '
         print(self.tag + ' started')
         self.brain_name = brain_name
@@ -46,18 +46,18 @@ class QLearningNNTrainerWithExperience:
         z1 = tf.add(tf.matmul(self.features, self.w1), self.b1)
         h1 = tf.nn.relu(z1)
 
-        self.w2 = tf.Variable(tf.random_normal([units_num, units_num]))
-        self.b2 = tf.Variable(tf.random_normal([units_num]))
-        z2 = tf.add(tf.matmul(h1, self.w2), self.b2)
-        h2 = tf.nn.relu(z2)
+        # self.w2 = tf.Variable(tf.random_normal([units_num, units_num]))
+        # self.b2 = tf.Variable(tf.random_normal([units_num]))
+        # z2 = tf.add(tf.matmul(h1, self.w2), self.b2)
+        # h2 = tf.nn.relu(z2)
 
         self.w_out = tf.Variable(tf.random_normal([units_num, self.output_num]))
         self.b_out = tf.Variable(tf.random_normal([self.output_num]))
-        self.Q = tf.add(tf.matmul(h2, self.w_out), self.b_out)
+        self.Q = tf.add(tf.matmul(h1, self.w_out), self.b_out)
 
         cost = tf.reduce_sum(tf.square(self.Qnext - self.Q))
         self.predict = tf.argmax(self.Q, 1)
-        self.optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
+        self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost)
 
     def _reshape_observations(self, obs):
         reshaped = []
@@ -93,8 +93,8 @@ class QLearningNNTrainerWithExperience:
                                                          feed_dict={self.features: self.observations})
         return self._append_random_actions(self.actions)
 
-    def post_step_actions(self, new_observation, rewards):
-        agent_observation_reshaped = self._reshape_observations(new_observation)
+    def post_step_actions(self, observations, actions, rewards, new_observations):
+        agent_observation_reshaped = self._reshape_observations(new_observations)
         new_Q = self.sess.run(self.Q, feed_dict={self.features: agent_observation_reshaped})
         for index in range(self.agents_num):
             self.agentsTargetQ[index][self.actions[index]] = rewards[index] + self.discount_rate * np.max(new_Q[index])
@@ -105,7 +105,7 @@ class QLearningNNTrainerWithExperience:
     def post_episode_actions(self, rewards, episode):
         self.current_random_action_chance = (1.5**(-1*episode))*self.random_action_chance
         print('Episode: {}, random_action_chance: {}'.format(episode, self.current_random_action_chance))
-        self.save_model()
+        # self.save_model()
 
     def save_model(self):
         w1, b1, w2, b2, w_out, b_out = self.sess.run([self.w1, self.b1, self.w2, self.b2, self.w_out, self.b_out])
