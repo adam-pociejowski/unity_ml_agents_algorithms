@@ -70,9 +70,10 @@ def log_stats(models, rewards_log_copy, rewards, episode, step):
         best = np.amax(rewards_change)
         avg = np.average(rewards_change)
         print("[BRAIN]:       {:8}, avg: {:8.4f}, best: {:8.4f}".format(m.brain_name, avg, best))
-        summary, _, _ = sess.run([merged, mean_reward, max_reward],
-                                 feed_dict={mean_reward_placeholder: avg,
-                                            max_reward_placeholder: best})
+        summary, _, _, _ = sess.run([merged, mean_reward, max_reward, learning_rate],
+                                    feed_dict={mean_reward_placeholder: avg,
+                                               max_reward_placeholder: best,
+                                               learning_rate_placeholder: m.trainer.learning_rate})
         m.trainer.summary_writer.add_summary(summary, (episode*5000 + step))
     return rewards.copy()
 
@@ -86,6 +87,9 @@ with tf.name_scope('Summaries'):
 
     max_reward_placeholder = tf.placeholder(tf.float32, shape=None, name='max_reward')
     max_reward = tf.summary.scalar('max_reward', max_reward_placeholder)
+
+    learning_rate_placeholder = tf.placeholder(tf.float32, shape=None, name='learning_rate')
+    learning_rate = tf.summary.scalar('learning_rate', learning_rate_placeholder)
 
     # epsilon_placeholder = tf.placeholder(tf.float32, shape=None, name='epsilon')
     # epsilon = tf.summary.scalar('epsilon', epsilon_placeholder)

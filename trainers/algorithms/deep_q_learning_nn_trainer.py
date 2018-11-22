@@ -3,8 +3,9 @@ import tensorflow as tf
 
 
 class DeepQLearningNNTrainer:
-    def __init__(self, brain_name, input_num, output_num, agents_num, learning_rate=0.01, epsilon_max=0.9,
-                 discount_rate=0.9, memory_size=1000, batch_size=32, layer_1_nodes=10, layer_2_nodes=10):
+    def __init__(self, brain_name, input_num, output_num, agents_num, learning_rate=0.0002, epsilon_max=1.0,
+                 epsilon_min=0.01, decay_rate=0.0001, discount_rate=0.9, memory_size=1000, batch_size=32, layer_1_nodes=10,
+                 layer_2_nodes=10):
         self.tag = '[DeepQLearningNNTrainer - ' + brain_name + ']: '
         print(self.tag + ' started')
         self.brain_name = brain_name
@@ -15,29 +16,31 @@ class DeepQLearningNNTrainer:
         self.learning_rate = learning_rate
         self.batch_size = batch_size
         self.memory_size = memory_size
-        self.action_memory = np.zeros(self.memory_size)
-        self.reward_memory = np.zeros(self.memory_size)
-        self.observation_memory = np.zeros((self.input_num, self.memory_size))
-        self.new_observation_memory = np.zeros((self.input_num, self.memory_size))
-        self.memory_counter = 0
-        self.learn_step_counter = 0
-        self.replace_target_iter = 100
         self.epsilon_max = epsilon_max
-        self.epsilon_greedy_increment = 0.001
-        self.epsilon = 0
+        self.epsilon_min = epsilon_min
+        self.decay_rate = decay_rate
+
+        self._init_episode()
+        self.learn_step_counter = 0
+        self.epsilon = epsilon_max
         self.sess = {}
 
         W_init = tf.contrib.layers.xavier_initializer(seed=1)
         b_init = tf.contrib.layers.xavier_initializer(seed=1)
         self._build_eval_network(layer_1_nodes, layer_2_nodes, W_init, b_init)
         self.summary_writer = tf.summary.FileWriter("summary/deep_q_learning")
+        self.saver = tf.train.Saver()
 
         self.sess = tf.Session()
         init = tf.global_variables_initializer()
         self.sess.run(init)
 
-    def set_session(self, sess):
-        self.sess = sess
+    def _init_episode(self):
+        self.action_memory = np.zeros(self.memory_size)
+        self.reward_memory = np.zeros(self.memory_size)
+        self.observation_memory = np.zeros((self.input_num, self.memory_size))
+        self.new_observation_memory = np.zeros((self.input_num, self.memory_size))
+        self.episode_step_counter = 0
 
     def _reshape_observations(self, obs):
         reshaped = []
@@ -46,7 +49,7 @@ class DeepQLearningNNTrainer:
         return reshaped
 
     def get_actions(self, observation):
-        if np.random.uniform() < self.epsilon:
+        if np.random.random() > max(self.epsilon, self.epsilon_min):
             actions_q_value = self.sess.run(self.q_eval_outputs, feed_dict={self.X: np.asarray(observation).transpose()})
             actions = np.argmax(actions_q_value, axis=0)
         else:
@@ -55,20 +58,20 @@ class DeepQLearningNNTrainer:
 
     def _store_memory(self, observations, actions, rewards, new_observations):
         for i in range(len(actions)):
-            index = self.memory_counter % self.memory_size
+            index = self.episode_step_counter % self.memory_size
             self.observation_memory[:, index] = observations[i]
             self.action_memory[index] = actions[i]
             self.reward_memory[index] = rewards[i]
             self.new_observation_memory[:, index] = new_observations[i]
-            self.memory_counter += 1
+            self.episode_step_counter += 1
 
     def post_step_actions(self, observations, actions, rewards, new_observations):
         self._store_memory(observations, actions, rewards, new_observations)
-        if self.memory_counter > 1000:
+        if self.episode_step_counter > 2000:
             self._train()
 
     def _train(self):
-        index_range = min(self.memory_counter, self.memory_size)
+        index_range = min(self.episode_step_counter, self.memory_size)
         sample = np.random.choice(index_range, size=self.batch_size)
 
         observations_sample = self.observation_memory[:, sample]
@@ -87,14 +90,17 @@ class DeepQLearningNNTrainer:
             rewards_sample + self.discount_rate * np.max(q_next_outputs, axis=0)
         _, cost = self.sess.run([self.train_op, self.loss], feed_dict={self.X: observations_sample,
                                                                        self.Y: q_target_outputs})
-        self.epsilon = min(self.epsilon_max, self.epsilon + self.epsilon_greedy_increment)
+        self.epsilon -= self.decay_rate
         self.learn_step_counter += 1
 
     def post_episode_actions(self, rewards, episode):
-        pass
+        print("Random actions: {}".format(max(self.epsilon, self.epsilon_min)))
+        self.save_model()
+        self._init_episode()
 
     def save_model(self):
-        pass
+        self.saver.save(self.sess, "models/deep_q_learning/deep_q_learning.ckpt")
+        print("Model Saved")
 
     def load_model(self):
         pass
