@@ -49,10 +49,9 @@ def post_episode_actions(trainers, rewards, episode):
     print("\n################  EPISODE END: {} ################".format(episode + 1))
     for t in trainers:
         model_rewards = rewards[t.brain_name]
-        total_reward = sum(model_rewards)
         t.post_episode_actions(model_rewards, episode)
-        best = np.amax(total_reward)
-        avg = np.average(total_reward)
+        best = np.amax(model_rewards)
+        avg = np.average(model_rewards)
         print("[BRAIN]:       {:8}, avg: {:8.4f}, max: {:8.4f}".format(t.brain_name, avg, best))
         save_summary(t, avg, best, (episode+1)*5000)
     print("\n")
