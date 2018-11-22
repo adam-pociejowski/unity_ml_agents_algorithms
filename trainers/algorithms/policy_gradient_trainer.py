@@ -1,28 +1,25 @@
 import numpy as np
 import tensorflow as tf
+from trainers.algorithms.agent_trainer import AgentTrainer
 
 
-class PolicyGradientTrainer:
-    def __init__(self, brain_name, input_num, output_num, agents_num, layer_1_nodes, layer_2_nodes, learning_rate=0.01,
-                 discount_rate=0.95, batch_size=32, train_interval=1000):
-        self.tag = '[PolicyGradientTrainer - ' + brain_name + ']: '
-        print(self.tag + ' started')
-        self.brain_name = brain_name
-        self.input_num = input_num
-        self.output_num = output_num
-        self.agents_num = agents_num
-        self.discount_rate = discount_rate
-        self.learning_rate = learning_rate
-        self.batch_size = batch_size
+class PolicyGradientTrainer(AgentTrainer):
+
+    def __init__(self, brain, brain_name, input_num, output_num, layer_1_nodes, layer_2_nodes, agents_num,
+                 learning_rate=0.001, discount_rate=0.99, batch_size=32, train_interval=1000):
+        self.layer_1_nodes = layer_1_nodes
+        self.layer_2_nodes = layer_2_nodes
+        super().__init__(brain, brain_name, input_num, output_num, agents_num, model_name='policy_gradient',
+                         discount_rate=discount_rate, batch_size=batch_size, learning_rate=learning_rate)
         self.train_interval = train_interval
+
+    def _init_episode(self):
         self.step_counter = 0
         self.episode_observations, self.episode_actions, self.episode_rewards = [], [], []
-
-        self.build_network(layer_1_nodes, layer_2_nodes)
-        self.sess = tf.Session()
-        self.summary_writer = tf.summary.FileWriter("summary/policy_gradient")
-        init = tf.global_variables_initializer()
-        self.sess.run(init)
+        for i in range(self.agents_num):
+            self.episode_observations.append([])
+            self.episode_actions.append([])
+            self.episode_rewards.append([])
 
     def get_actions(self, observation):
         actions = []
@@ -34,62 +31,65 @@ class PolicyGradientTrainer:
         return actions
 
     def _store_memory(self, observation, actions, reward):
-        for i in range(len(actions)):
+        for i in range(self.agents_num):
             action_vector = np.zeros(self.output_num)
             action_vector[int(actions[i])] = 1
-            self.episode_actions.append(action_vector)
-            self.episode_observations.append(observation[i])
-            self.episode_rewards.append(reward[i])
+            self.episode_actions[i].append(action_vector)
+            self.episode_observations[i].append(observation[i])
+            self.episode_rewards[i].append(reward[i])
+            if reward[i] > 0.5:
+                print('reward: {}', reward[i])
+                self._train(i)
 
     def post_step_actions(self, observations, actions, rewards, new_observations):
         self._store_memory(observations, actions, rewards)
-        if self.step_counter % self.train_interval == 0 and self.step_counter > 0:
-            self._train()
         self.step_counter += 1
+        # if self.step_counter % self.train_interval == 0:
+        #     self._train()
 
-    def _train(self):
-        discounted_episode_rewards_norm = self.discount_and_norm_rewards()
+    def _train(self, agent_index):
+        discounted_episode_rewards_norm = self.discount_and_norm_rewards(self.episode_rewards[agent_index])
+        print('[train] index: {}, len: {}'.format(agent_index, len(self.episode_rewards[agent_index])))
         self.sess.run(self.train_op, feed_dict={
-            self.X: np.vstack(self.episode_observations).T,
-            self.Y: np.vstack(np.array(self.episode_actions)).T,
+            self.X: np.vstack(self.episode_observations[agent_index]).T,
+            self.Y: np.vstack(np.array(self.episode_actions[agent_index])).T,
             self.discounted_episode_rewards_norm: discounted_episode_rewards_norm,
         })
-        self.episode_observations, self.episode_actions, self.episode_rewards = [], [], []
+        self.episode_rewards[agent_index] = []
+        self.episode_actions[agent_index] = []
+        self.episode_observations[agent_index] = []
 
-    def discount_and_norm_rewards(self):
-        discounted_episode_rewards = np.zeros_like(self.episode_rewards)
+    def discount_and_norm_rewards(self, agent_episode_rewards):
+        discounted_episode_rewards = np.zeros_like(agent_episode_rewards)
         cumulative_reward = 0
-        for i in reversed(range(len(self.episode_rewards))):
-            cumulative_reward = cumulative_reward * self.discount_rate + self.episode_rewards[i]
+        for i in reversed(range(len(agent_episode_rewards))):
+            cumulative_reward = cumulative_reward * self.discount_rate + agent_episode_rewards[i]
             discounted_episode_rewards[i] = cumulative_reward
 
         discounted_episode_rewards -= np.mean(discounted_episode_rewards)
-        discounted_episode_rewards /= np.std(discounted_episode_rewards)
+        std_discounted_episode_rewards = np.std(discounted_episode_rewards)
+        if std_discounted_episode_rewards != 0.0:
+            discounted_episode_rewards /= std_discounted_episode_rewards
         return discounted_episode_rewards
 
     def post_episode_actions(self, rewards, episode):
-        pass
+        self._save_model(None)
+        self.learning_rate *= .8
 
-    def save_model(self):
-        pass
-
-    def load_model(self):
-        pass
-
-    def build_network(self, layer_1_nodes, layer_2_nodes):
+    def _init_model(self):
         with tf.name_scope('inputs'):
             self.X = tf.placeholder(tf.float32, shape=(self.input_num, None), name="X")
             self.Y = tf.placeholder(tf.float32, shape=(self.output_num, None), name="Y")
             self.discounted_episode_rewards_norm = tf.placeholder(tf.float32, [None, ], name="actions_value")
 
         with tf.name_scope('parameters'):
-            W1 = tf.get_variable("W1", [layer_1_nodes, self.input_num],
+            W1 = tf.get_variable("W1", [self.layer_1_nodes, self.input_num],
                                  initializer=tf.contrib.layers.xavier_initializer(seed=1))
-            b1 = tf.get_variable("b1", [layer_1_nodes, 1], initializer=tf.contrib.layers.xavier_initializer(seed=1))
-            W2 = tf.get_variable("W2", [layer_2_nodes, layer_1_nodes],
+            b1 = tf.get_variable("b1", [self.layer_1_nodes, 1], initializer=tf.contrib.layers.xavier_initializer(seed=1))
+            W2 = tf.get_variable("W2", [self.layer_2_nodes, self.layer_1_nodes],
                                  initializer=tf.contrib.layers.xavier_initializer(seed=1))
-            b2 = tf.get_variable("b2", [layer_2_nodes, 1], initializer=tf.contrib.layers.xavier_initializer(seed=1))
-            W3 = tf.get_variable("W3", [self.output_num, layer_2_nodes],
+            b2 = tf.get_variable("b2", [self.layer_2_nodes, 1], initializer=tf.contrib.layers.xavier_initializer(seed=1))
+            W3 = tf.get_variable("W3", [self.output_num, self.layer_2_nodes],
                                  initializer=tf.contrib.layers.xavier_initializer(seed=1))
             b3 = tf.get_variable("b3", [self.output_num, 1], initializer=tf.contrib.layers.xavier_initializer(seed=1))
 

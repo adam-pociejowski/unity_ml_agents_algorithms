@@ -1,53 +1,28 @@
 import numpy as np
 import tensorflow as tf
+from trainers.algorithms.agent_trainer import AgentTrainer
 
 
-class DeepQLearningNNTrainerTwoNetworks:
-    def __init__(self, brain_name, input_num, output_num, agents_num, learning_rate=0.01, epsilon_max=0.9,
-                 discount_rate=0.9, memory_size=1000, batch_size=32, layer_1_nodes=10, layer_2_nodes=10):
-        self.tag = '[DeepQLearningNNTrainerTwoNetworks - ' + brain_name + ']: '
-        print(self.tag + ' started')
-        self.brain_name = brain_name
-        self.input_num = input_num
-        self.output_num = output_num
-        self.agents_num = agents_num
-        self.discount_rate = discount_rate
-        self.learning_rate = learning_rate
-        self.batch_size = batch_size
-        self.memory_size = memory_size
+class DeepQLearningNNTrainerTwoNetworks(AgentTrainer):
+
+    def __init__(self, brain, brain_name, input_num, output_num, agents_num, memory_size=1000, batch_size=32,
+                 layer_1_nodes=10, layer_2_nodes=10):
+        self.layer_1_nodes = layer_1_nodes
+        self.layer_2_nodes = layer_2_nodes
+        super().__init__(brain, brain_name, input_num, output_num, agents_num, model_name='deep_q_learning_two_nets',
+                         memory_size=memory_size, batch_size=batch_size)
+        self.replace_target_iter = 100
+        self.learn_step_counter = 0
+        self.memory_counter = 0
+
+    def _init_episode(self):
         self.action_memory = np.zeros(self.memory_size)
         self.reward_memory = np.zeros(self.memory_size)
         self.observation_memory = np.zeros((self.input_num, self.memory_size))
         self.new_observation_memory = np.zeros((self.input_num, self.memory_size))
-        self.memory_counter = 0
-        self.learn_step_counter = 0
-        self.replace_target_iter = 100
-        self.epsilon_max = epsilon_max
-        self.epsilon_greedy_increment = 0.001
-        self.epsilon = 0
-        self.sess = {}
-
-        W_init = tf.contrib.layers.xavier_initializer(seed=1)
-        b_init = tf.contrib.layers.xavier_initializer(seed=1)
-        self._build_eval_network(layer_1_nodes, layer_2_nodes, W_init, b_init)
-        self._build_target_network(layer_1_nodes, layer_2_nodes, W_init, b_init)
-
-        self.sess = tf.Session()
-        self.summary_writer = tf.summary.FileWriter("summary/deep_q_learning_two_nets")
-        init = tf.global_variables_initializer()
-        self.sess.run(init)
-
-    def set_session(self, sess):
-        self.sess = sess
-
-    def _reshape_observations(self, obs):
-        reshaped = []
-        for index in range(len(obs)):
-            reshaped.append(np.asarray(obs[index]).reshape(self.input_num))
-        return reshaped
 
     def get_actions(self, observation):
-        if np.random.uniform() < self.epsilon:
+        if np.random.random() > max(self.epsilon, self.epsilon_min):
             actions_q_value = self.sess.run(self.q_eval_outputs, feed_dict={self.X: np.asarray(observation).transpose()})
             actions = np.argmax(actions_q_value, axis=0)
         else:
@@ -98,17 +73,18 @@ class DeepQLearningNNTrainerTwoNetworks:
             rewards_sample + self.discount_rate * np.max(q_next_outputs, axis=0)
         _, cost = self.sess.run([self.train_op, self.loss], feed_dict={self.X: observations_sample,
                                                                        self.Y: q_target_outputs})
-        self.epsilon = min(self.epsilon_max, self.epsilon + self.epsilon_greedy_increment)
+        self.epsilon -= self.decay_rate
         self.learn_step_counter += 1
 
     def post_episode_actions(self, rewards, episode):
-        pass
+        super()._save_model(None)
+        self.learning_rate *= .75
 
-    def save_model(self):
-        pass
-
-    def load_model(self):
-        pass
+    def _init_model(self):
+        W_init = tf.contrib.layers.xavier_initializer(seed=1)
+        b_init = tf.contrib.layers.xavier_initializer(seed=1)
+        self._build_eval_network(self.layer_1_nodes, self.layer_2_nodes, W_init, b_init)
+        self._build_target_network(self.layer_1_nodes, self.layer_2_nodes, W_init, b_init)
 
     def _build_eval_network(self, layer_1_nodes, layer_2_nodes, W_init, b_init):
         self.X = tf.placeholder(tf.float32, [self.input_num, None], name='s')

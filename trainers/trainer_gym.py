@@ -24,7 +24,7 @@ if __name__ == '__main__':
     env_name = "../../env/multi-6-agent/Tanks"
     env = UnityEnv(env_name, worker_id=0, use_visual=False, multiagent=True)
     trainer = GeneticAlgorithmTrainer('PPOBrain', number_of_observations=42, number_of_actions=6,
-                                      number_of_chromosomes=40, number_of_elite_chromosomes=8, hidden_layer_nodes=128)
+                                      number_of_chromosomes=40, elite_chromosomes=8, hidden_layer_nodes=128)
     for episode in range(number_of_episodes):
         rewards = run_episode(env, trainer)
         trainer.update_model(rewards)
