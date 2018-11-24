@@ -1,6 +1,7 @@
 import numpy as np
 from operator import add
 import tensorflow as tf
+from trainers.trainer_python_api import EPISODE_LENGTH, LOG_INTERVAL
 
 
 def update_rewards(rewards, trainers, new_env_info, actions, env_info):
@@ -38,7 +39,7 @@ def run_episode(trainers, env, episode, train_mode, episode_max_length):
         actions = get_actions(trainers, env_info)
         new_env_info = env.step(actions)
         rewards = update_rewards(rewards, trainers, new_env_info, actions, env_info)
-        if step % 1000 == 0 and step > 0:
+        if step % LOG_INTERVAL == 0 and step > 0:
             rewards_log_copy = log_stats(trainers, rewards_log_copy, rewards, episode, step)
         env_info = new_env_info
         
@@ -53,7 +54,6 @@ def post_episode_actions(trainers, rewards, episode):
         best = np.amax(model_rewards)
         avg = np.average(model_rewards)
         print("[BRAIN]:       {:8}, avg: {:8.4f}, max: {:8.4f}".format(t.brain_name, avg, best))
-        save_summary(t, avg, best, (episode+1)*5000)
     print("\n")
 
 
@@ -64,16 +64,17 @@ def log_stats(trainers, rewards_log_copy, rewards, episode, step):
         best = np.amax(rewards_change)
         avg = np.average(rewards_change)
         print("[BRAIN]:       {:8}, avg: {:8.4f}, best: {:8.4f}".format(t.brain_name, avg, best))
-        save_summary(t, avg, best, episode*5000 + step)
+        save_summary(t, avg, best, episode*(EPISODE_LENGTH - 1) + step)
     return rewards.copy()
 
 
 def save_summary(trainer, avg_reward, best_reward, step):
-    summary, _, _, _, _ = sess.run([merged, mean_reward, max_reward, learning_rate, random_action_chance],
-                                   feed_dict={mean_reward_placeholder: avg_reward,
-                                              max_reward_placeholder: best_reward,
-                                              learning_rate_placeholder: trainer.learning_rate,
-                                              random_action_chance_placeholder: trainer.epsilon})
+    summary, _, _, _, _, _ = sess.run([merged, mean_reward, max_reward, learning_rate, random_action_chance, loss],
+                                      feed_dict={mean_reward_placeholder: avg_reward,
+                                                 max_reward_placeholder: best_reward,
+                                                 loss_placeholder: trainer.current_loss,
+                                                 learning_rate_placeholder: trainer.learning_rate,
+                                                 random_action_chance_placeholder: trainer.epsilon})
     trainer.summary_writer.add_summary(summary, step)
 
 
@@ -92,4 +93,7 @@ with tf.name_scope('Summaries'):
 
     random_action_chance_placeholder = tf.placeholder(tf.float32, shape=None, name='random_action_chance')
     random_action_chance = tf.summary.scalar('random_action_chance', random_action_chance_placeholder)
+
+    loss_placeholder = tf.placeholder(tf.float32, shape=None, name='loss')
+    loss = tf.summary.scalar('loss', loss_placeholder)
     merged = tf.summary.merge_all()

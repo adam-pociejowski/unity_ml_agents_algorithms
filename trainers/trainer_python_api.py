@@ -1,12 +1,13 @@
+from trainers.algorithms.deep_q_learning_improved_trainer import *
 from trainers.algorithms.genetic_algorithm_trainer import *
-from trainers.algorithms.deep_q_learning_nn_trainer_two_networks import *
-from trainers.algorithms.policy_gradient_trainer import *
-from trainers.algorithms.deep_q_learning_nn_trainer import *
-from mlagents.envs import UnityEnvironment
+from trainers.algorithms.policy_gradients_trainer import *
+from trainers.algorithms.deep_q_learning_trainer import *
 from trainers.trainer_python_api_utils import *
+from mlagents.envs import UnityEnvironment
 
-number_of_episodes = 40
-episode_max_length = 5000
+NUMBER_OF_EPISODES = 1000
+EPISODE_LENGTH = 1001
+LOG_INTERVAL = 1000
 train_mode = True
 
 
@@ -15,23 +16,26 @@ if __name__ == '__main__':
     env_name = "../../env/single-64/Tanks"
     env = UnityEnvironment(worker_id=0, file_name=env_name, no_graphics=True)
     print('Brains: {}'.format(env.brains))
-    genetic_trainer = GeneticAlgorithmTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6,
-                                              agents_num=64, elite_chromosomes=6, hidden_layer_nodes=128)
+    genetic_trainer = GeneticAlgorithmTrainer(
+                            env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64,
+                            elite_chromosomes=6, hidden_layer_nodes=128)
 
-    q_learn_trainer = DeepQLearningNNTrainer(
-                            env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6,
-                            agents_num=64, memory_size=5000, batch_size=32, layer_1_nodes=128, layer_2_nodes=128)
+    q_learn_trainer = DeepQLearningTrainer(
+                            env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64,
+                            memory_size=5000, batch_size=32, layer_1_nodes=128, layer_2_nodes=128)
 
-    q_learn_trainer_2_nets = DeepQLearningNNTrainerTwoNetworks(
-                            env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6,
-                            agents_num=64, memory_size=5000, batch_size=32, layer_1_nodes=128, layer_2_nodes=128)
+    q_learn_improved_trainer = DeepQLearningImprovedTrainer(
+                            env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64,
+                            memory_size=5000, batch_size=32, layer_1_nodes=128, layer_2_nodes=128)
 
-    policy_gradient = PolicyGradientTrainer(
-                            env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, layer_1_nodes=128,
-                            layer_2_nodes=128, agents_num=8)
-    trainers = [q_learn_trainer]
+    policy_gradient = PolicyGradientsTrainer(
+                            env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64,
+                            layer_1_nodes=128, layer_2_nodes=128, discount_rate=0.95, learning_rate=0.001)
+    trainers = [policy_gradient]
+    for i in range(len(trainers)):
+        trainers[i].init()
 
-    for episode in range(number_of_episodes):
-        run_episode(trainers, env, episode, train_mode, episode_max_length)
+    for episode in range(NUMBER_OF_EPISODES):
+        run_episode(trainers, env, episode, train_mode, EPISODE_LENGTH)
 
     env.close()

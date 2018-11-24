@@ -1,4 +1,4 @@
-from trainers.algorithms.agent_trainer import AgentTrainer
+from trainers.agent_trainer import AgentTrainer
 import pandas as pd
 import numpy as np
 import random
@@ -17,7 +17,7 @@ class GeneticAlgorithmTrainer(AgentTrainer):
         self.max_mutation_value_change = max_mutation_value_change
         self.elite_chromosomes = elite_chromosomes
         super().__init__(brain, brain_name, output_num, output_num, agents_num, model_name='genetic_algorithm',
-                         use_tf=False)
+                         epsilon_max=0.0, epsilon_min=0.0, use_tf=False)
 
     def _init_model(self):
         for i in range(self.agents_num):
