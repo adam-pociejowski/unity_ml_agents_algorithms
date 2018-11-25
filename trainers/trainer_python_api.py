@@ -1,5 +1,6 @@
 from trainers.algorithms.deep_q_learning_improved_trainer import *
 from trainers.algorithms.genetic_algorithm_trainer import *
+from trainers.algorithms.policy_gradients_agent_batch_trainer import *
 from trainers.algorithms.policy_gradients_trainer import *
 from trainers.algorithms.deep_q_learning_trainer import *
 from trainers.trainer_python_api_utils import *
@@ -28,10 +29,15 @@ if __name__ == '__main__':
                             env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64,
                             memory_size=5000, batch_size=32, layer_1_nodes=128, layer_2_nodes=128)
 
-    policy_gradient = PolicyGradientsTrainer(
+    policy_gradients = PolicyGradientsTrainer(
                             env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64,
                             layer_1_nodes=128, layer_2_nodes=128, discount_rate=0.95, learning_rate=0.001)
-    trainers = [policy_gradient]
+
+    policy_gradients_agent_batch = PolicyGradientsAgentBatchTrainer(
+                            env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64,
+                            layer_1_nodes=128, layer_2_nodes=128, discount_rate=0.95, learning_rate=0.001)
+
+    trainers = [policy_gradients_agent_batch]
     for i in range(len(trainers)):
         trainers[i].init()
 
