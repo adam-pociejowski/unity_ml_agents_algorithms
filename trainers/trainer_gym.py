@@ -1,6 +1,6 @@
 import numpy as np
 from gym_unity.envs import UnityEnv
-from trainers.algorithms.deep_q_learning_trainer import DeepQLearningTrainer
+from trainers.algorithms.deep_q_learning.deep_q_learning_trainer import DeepQLearningTrainer
 
 number_of_agents = 40
 number_of_episodes = 20

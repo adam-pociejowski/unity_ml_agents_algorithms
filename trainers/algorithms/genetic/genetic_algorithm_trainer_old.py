@@ -4,10 +4,10 @@ import numpy as np
 import random
 
 
-class GeneticAlgorithmTrainer(AgentTrainer):
+class GeneticAlgorithmOldTrainer(AgentTrainer):
 
-    def __init__(self, brain, brain_name, input_num, output_num, mutation_rate=0.05, max_mutation_value_change=0.2,
-                 agents_num=40, elite_chromosomes=8, hidden_layer_nodes=87):
+    def __init__(self, brain, brain_name, input_num, output_num, mutation_rate=0.05, max_mutation_value_change=0.2, agents_num=40,
+                 elite_chromosomes=8, hidden_layer_nodes=87, model_name='genetic_algorithm', restore_model=False):
         self.population = []
         self.input_layer_nodes = input_num + 1
         self.hidden_layer_nodes = hidden_layer_nodes
@@ -16,8 +16,8 @@ class GeneticAlgorithmTrainer(AgentTrainer):
         self.mutation_rate = mutation_rate
         self.max_mutation_value_change = max_mutation_value_change
         self.elite_chromosomes = elite_chromosomes
-        super().__init__(brain, brain_name, output_num, output_num, agents_num, model_name='genetic_algorithm',
-                         epsilon_max=0.0, epsilon_min=0.0, use_tf=False)
+        super().__init__(brain, brain_name, input_num, output_num, agents_num, model_name=model_name, epsilon_max=0.0, epsilon_min=0.0, use_tf=False,
+                         restore_model=restore_model)
 
     def _init_model(self):
         for i in range(self.agents_num):

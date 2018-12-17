@@ -1,21 +1,24 @@
 import numpy as np
 import tensorflow as tf
 from trainers.agent_trainer import AgentTrainer
+from trainers.algorithms.model.agent_experience import AgentExperience
 
 
-class PolicyGradientsTrainer(AgentTrainer):
+class PolicyGradientsAgentBatchTrainer(AgentTrainer):
 
-    def __init__(self, brain, brain_name, input_num, output_num, layer_1_nodes, layer_2_nodes, agents_num,
-                 learning_rate=0.0001, discount_rate=0.9, batch_size=32, train_interval=1000, epochs=1):
+    def __init__(self, brain, brain_name, input_num, output_num, layer_1_nodes, layer_2_nodes, agents_num, learning_rate=0.0001, discount_rate=0.9,
+                 batch_size=32, train_interval=1000, model_name='policy_gradients_new', restore_model=False):
         self.layer_1_nodes = layer_1_nodes
         self.layer_2_nodes = layer_2_nodes
-        super().__init__(brain, brain_name, input_num, output_num, agents_num, model_name='policy_gradients',
-                         discount_rate=discount_rate, batch_size=batch_size, learning_rate=learning_rate,
-                         epsilon_max=0.0, epsilon_min=0.0)
+        super().__init__(brain, brain_name, input_num, output_num, agents_num, model_name=model_name, discount_rate=discount_rate,
+                         batch_size=batch_size, learning_rate=learning_rate, epsilon_max=0.0, epsilon_min=0.0, restore_model=restore_model)
         self.train_interval = train_interval
 
     def _init_episode(self):
-        self.episode_observations, self.episode_actions, self.episode_rewards = [], [], []
+        self.episode_agents_experience = []
+        for i in range(self.agents_num):
+            self.episode_agents_experience.append(AgentExperience([], [], []))
+
         self.train_interval_counter = 0
         self.selected_actions = np.zeros(self.output_num, dtype=int)
 
@@ -29,35 +32,33 @@ class PolicyGradientsTrainer(AgentTrainer):
         return actions
 
     def _store_memory(self, observation, actions, reward):
-        # if self.step % 500 == 0:
-        #     print('selected actions: {}'.format(self.selected_actions))
-        #     self.selected_actions = np.zeros(self.output_num, dtype=int)
-
         for i in range(self.agents_num):
             action_vector = np.zeros(self.output_num)
             action_vector[int(actions[i])] = 1
             self.selected_actions[int(actions[i])] += 1
-            self.episode_actions.append(action_vector)
-            self.episode_observations.append(observation[i])
-            self.episode_rewards.append(reward[i])
+            self.episode_agents_experience[i].observations.append(observation[i])
+            self.episode_agents_experience[i].actions.append(action_vector)
+            self.episode_agents_experience[i].rewards.append(reward[i])
 
     def post_step_actions(self, observations, actions, rewards, new_observations):
         super().post_step_actions(observations, actions, rewards, new_observations)
         self._store_memory(observations, actions, rewards)
 
     def _train(self):
-        discounted_episode_rewards = self.discount_and_norm_rewards()
-        _, self.current_loss = self.sess.run([self.train_op, self.loss],
-                                             feed_dict={self.X: np.vstack(self.episode_observations).T,
-                                                        self.Y: np.vstack(np.array(self.episode_actions)).T,
-                                                        self.discounted_episode_rewards_norm: discounted_episode_rewards
-                                                        })
+        for i in range(self.agents_num):
+            agent_experience = self.episode_agents_experience[i]
+            discounted_rewards = self.discount_and_norm_rewards(agent_experience)
+            _, self.current_loss = self.sess.run([self.train_op, self.loss],
+                                                 feed_dict={self.X: np.vstack(agent_experience.observations).T,
+                                                            self.Y: np.vstack(np.array(agent_experience.actions)).T,
+                                                            self.discounted_episode_rewards_norm: discounted_rewards
+                                                            })
 
-    def discount_and_norm_rewards(self):
-        discounted_episode_rewards = np.zeros_like(self.episode_rewards)
+    def discount_and_norm_rewards(self, agent_experience):
+        discounted_episode_rewards = np.zeros_like(agent_experience.rewards)
         cumulative_reward = 0
-        for i in reversed(range(len(self.episode_rewards))):
-            cumulative_reward = cumulative_reward * self.discount_rate + self.episode_rewards[i]
+        for i in reversed(range(len(agent_experience.rewards))):
+            cumulative_reward = cumulative_reward * self.discount_rate + agent_experience.rewards[i]
             discounted_episode_rewards[i] = cumulative_reward
 
         discounted_episode_rewards -= np.mean(discounted_episode_rewards)
@@ -69,6 +70,8 @@ class PolicyGradientsTrainer(AgentTrainer):
 
     def post_episode_actions(self, rewards, episode):
         self._train()
+        del self.episode_agents_experience
+        del self.selected_actions
         self._init_episode()
 
     def _init_model(self):

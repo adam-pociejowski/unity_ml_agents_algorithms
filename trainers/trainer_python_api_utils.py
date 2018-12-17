@@ -1,7 +1,8 @@
 import numpy as np
 from operator import add
 import tensorflow as tf
-from trainers.trainer_python_api import EPISODE_LENGTH, LOG_INTERVAL
+
+episode_length = 0
 
 
 def update_rewards(rewards, trainers, new_env_info, actions, env_info):
@@ -31,7 +32,7 @@ def init_rewards_dict(trainers):
     return rewards
 
 
-def run_episode(trainers, env, episode, train_mode, episode_max_length):
+def run_episode(trainers, env, episode, train_mode, episode_max_length=5000, log_interval=1000, verbose=True):
     env_info = env.reset(train_mode=train_mode)
     rewards = init_rewards_dict(trainers)
     rewards_log_copy = rewards.copy()
@@ -39,32 +40,60 @@ def run_episode(trainers, env, episode, train_mode, episode_max_length):
         actions = get_actions(trainers, env_info)
         new_env_info = env.step(actions)
         rewards = update_rewards(rewards, trainers, new_env_info, actions, env_info)
-        if step % LOG_INTERVAL == 0 and step > 0:
-            rewards_log_copy = log_stats(trainers, rewards_log_copy, rewards, episode, step)
+        if step % log_interval == 0 and (step > 0 or episode == 0):
+            rewards_log_copy = log_stats(trainers, rewards_log_copy, rewards, episode, step, episode_max_length, verbose)
         env_info = new_env_info
-        
-    post_episode_actions(trainers, rewards, episode)
-    
 
-def post_episode_actions(trainers, rewards, episode):
-    print("\n################  EPISODE END: {} ################".format(episode + 1))
+    post_episode_actions(trainers, rewards, episode, verbose)
+    del rewards
+    del rewards_log_copy
+
+
+def run_episode_from_restored_model(trainers, env, episode, train_mode, episode_max_length=5000, log_interval=1000, verbose=True, init_step=0):
+    env_info = env.reset(train_mode=train_mode)
+    rewards = init_rewards_dict(trainers)
+    rewards_log_copy = rewards.copy()
+    for step in range(init_step + 1, episode_max_length):
+        actions = get_actions(trainers, env_info)
+        new_env_info = env.step(actions)
+        rewards = update_rewards(rewards, trainers, new_env_info, actions, env_info)
+        if step % log_interval == 0 and (step > 0 or episode == 0):
+            rewards_log_copy = log_stats(trainers, rewards_log_copy, rewards, episode, step, episode_max_length, verbose)
+        env_info = new_env_info
+
+    post_episode_actions(trainers, rewards, episode, verbose)
+    del rewards
+    del rewards_log_copy
+
+
+def post_episode_actions(trainers, rewards, episode, verbose):
+    if verbose:
+        print("\n################  EPISODE END: {} ################".format(episode + 1))
+
     for t in trainers:
         model_rewards = rewards[t.brain_name]
         t.post_episode_actions(model_rewards, episode)
         best = np.amax(model_rewards)
         avg = np.average(model_rewards)
-        print("[BRAIN]:       {:8}, avg: {:8.4f}, max: {:8.4f}".format(t.brain_name, avg, best))
-    print("\n")
+        if verbose:
+            print("[BRAIN]:       {:8}, avg: {:8.4f}, max: {:8.4f}".format(t.brain_name, avg, best))
+
+    if verbose:
+        print("\n")
 
 
-def log_stats(trainers, rewards_log_copy, rewards, episode, step):
-    print("##########  EPISODE: {},  STEP: {}  ############".format(episode + 1, step))
+def log_stats(trainers, rewards_log_copy, rewards, episode, step, episode_max_length, verbose):
+    if verbose:
+        print("##########  EPISODE: {},  STEP: {}  ############".format(episode + 1, step))
+
     for t in trainers:
         rewards_change = [a_i - b_i for a_i, b_i in zip(rewards[t.brain_name], rewards_log_copy[t.brain_name])]
         best = np.amax(rewards_change)
         avg = np.average(rewards_change)
-        print("[BRAIN]:       {:8}, avg: {:8.4f}, best: {:8.4f}".format(t.brain_name, avg, best))
-        save_summary(t, avg, best, episode*(EPISODE_LENGTH - 1) + step)
+        if verbose:
+            print("[BRAIN]:       {:8}, avg: {:8.4f}, best: {:8.4f}".format(t.brain_name, avg, best))
+
+        save_summary(t, avg, best, episode*(episode_max_length - 1) + step)
     return rewards.copy()
 
 

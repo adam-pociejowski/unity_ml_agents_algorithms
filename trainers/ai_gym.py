@@ -1,8 +1,8 @@
 import gym
-from trainers.algorithms.policy_gradients_trainer import PolicyGradientsTrainer
+from trainers.algorithms.actor_critic.actor_critic_keras_trainer import *
 import numpy as np
 
-env = gym.make('CartPole-v0')
+env = gym.make('CartPole-v1')
 env = env.unwrapped
 
 print(env.action_space)
@@ -16,8 +16,8 @@ rewards = []
 total_steps_counter = 0
 
 if __name__ == '__main__':
-    trainer = PolicyGradientsTrainer(None, 'PPOBrain', input_num=4, output_num=2, layer_1_nodes=10, layer_2_nodes=2,
-                                     agents_num=1, learning_rate=0.01, discount_rate=0.95)
+    trainer = ActorCriticKerasTrainer(None, 'PPOBrain', input_num=4, output_num=2, agents_num=1, memory_size=5000, batch_size=5,
+                                      layer_1_nodes=128, layer_2_nodes=128, discount_rate=0.99)
     trainer.init()
     for episode in range(episodes):
         observation = env.reset()
@@ -27,8 +27,9 @@ if __name__ == '__main__':
             if render:
                 env.render()
 
-            actions = trainer.get_actions([observation])
+            actions = trainer.get_actions(observation)
             new_observation, reward, done, info = env.step(actions[0])
+            reward = reward if not done else -100
             episode_reward += reward
             trainer.post_step_actions([observation], actions, [reward], [new_observation])
             if done:

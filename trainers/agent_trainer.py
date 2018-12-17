@@ -4,10 +4,9 @@ import abc
 
 
 class AgentTrainer:
-    def __init__(self, brain, brain_name, input_num, output_num, agents_num, model_name, learning_rate=0.0002,
-                 epsilon_max=1.0, epsilon_min=0.01, decay_rate=0.0001, discount_rate=0.9, memory_size=5000,
-                 batch_size=32, param_decrease_interval=100, epsilon_decay_rate=1.0001, learning_rate_decay_rate=1.0002,
-                 use_tf=True):
+    def __init__(self, brain, brain_name, input_num, output_num, agents_num, model_name, learning_rate=0.0002, epsilon_max=1.0, epsilon_min=0.01,
+                 decay_rate=0.0001, discount_rate=0.99, memory_size=5000, batch_size=32, param_decrease_interval=100, epsilon_decay_rate=1.0001,
+                 use_tf=True, restore_model=False):
         __metaclass__ = abc.ABCMeta
         self.brain = brain
         self.brain_name = brain_name
@@ -26,19 +25,31 @@ class AgentTrainer:
         self.epsilon_decay_rate = epsilon_decay_rate
         self.param_decrease_interval = param_decrease_interval
         self.use_tf = use_tf
+        self.restore_model = restore_model
+        self.models_dir = 'models/' + self.model_name
+        self.summary_dir = 'summary/' + self.model_name
+        self.save_summary = True
+        self.summary_writer = None
+        self.saver = None
+        self.sess = None
         self.current_loss = 0
         self.step = 0
 
     def init(self):
         print('[' + type(self).__name__ + ' - ' + self.brain_name + ']:  init')
         self._init_model()
-        self.summary_writer = tf.summary.FileWriter('summary/' + self.model_name)
-        if self.use_tf:
-            self.saver = tf.train.Saver()
+        self.summary_writer = tf.summary.FileWriter(self.summary_dir)
         self.sess = tf.Session()
+        self._init_tensorflow()
+        self._init_episode()
+
+    def _init_tensorflow(self):
+        self.saver = tf.train.Saver()
+        if self.restore_model:
+            self._restore_model()
+
         init = tf.global_variables_initializer()
         self.sess.run(init)
-        self._init_episode()
 
     @abc.abstractmethod
     def _init_model(self):
@@ -67,5 +78,9 @@ class AgentTrainer:
         return reshaped
 
     def _save_model(self, data):
-        self.saver.save(self.sess, 'models/' + self.model_name + '/' + self.model_name + '.ckpt')
-        print('Model '+self.model_name+' Saved')
+        self.saver.save(self.sess, self.models_dir + '/' + self.model_name + '.ckpt')
+
+    def _restore_model(self):
+        model_path = self.models_dir + '/' + self.model_name + '.ckpt'
+        self.saver.restore(self.sess, model_path)
+        print(f'Model restored: {model_path}')
