@@ -10,7 +10,7 @@ from trainers.trainer_python_api_utils import *
 
 if __name__ == '__main__':
     env_name = "../../env/single-64/Tanks"
-    env = UnityEnvironment(worker_id=7, file_name=env_name, no_graphics=True)
+    env = UnityEnvironment(worker_id=8, file_name=env_name, no_graphics=True)
     print('Brains: {}'.format(env.brains))
     genetic_trainer = GeneticAlgorithmOldTrainer(
                             env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, elite_chromosomes=6,
@@ -41,7 +41,7 @@ if __name__ == '__main__':
                             env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, memory_size=5000, batch_size=32,
                             layer_1_nodes=128, layer_2_nodes=128)
 
-    trainers = [q_learn_trainer]
+    trainers = [q_learn_improved_trainer]
     for i in range(len(trainers)):
         trainers[i].init()
 

@@ -7,11 +7,9 @@ from docopt import docopt
 from mlagents.envs import UnityEnvironment
 from trainers.algorithms.genetic.genetic_algorithm_trainer_old import *
 from trainers.algorithms.genetic.genetic_algorithm_trainer import *
-from trainers.algorithms.policy_gradients.policy_gradients_agent_batch_trainer import *
-from trainers.algorithms.policy_gradients.policy_gradients_trainer import *
 from trainers.algorithms.deep_q_learning.deep_q_learning_improved_trainer import *
-# from trainers.algorithms.deep_q_learning.deep_q_learning_trainer import *
-# from trainers.keras.deep_q_learning_improved_trainer import *
+from trainers.algorithms.deep_q_learning.deep_q_learning_trainer import *
+from trainers.keras.deep_q_learning_improved_trainer import *
 from trainers.keras.deep_q_learning_trainer import *
 from trainers.keras.actor_critic_trainer import *
 from trainers.trainer_python_api_utils import *
@@ -22,9 +20,8 @@ logger.setLevel(logging.ERROR)
 model_dict = {'ga_old': 'genetic_algorithm_old',
               'ga': 'genetic_algorithm',
               'dql': 'deep_q_learning',
+              'dqlk': 'deep_q_learning_keras',
               'dqli': 'deep_q_learning_improved',
-              'pol': 'policy_gradients',
-              'poli': 'policy_gradients_improved',
               'a2c_old': 'actor_critic_old',
               'a2c': 'actor_critic'}
 
@@ -76,20 +73,15 @@ def _choose_trainer(env, model_id):
         return GeneticAlgorithmTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, layer_1_nodes=64,
                                        layer_2_nodes=64, elite_chromosomes=8, model_name=model_name_with_id, restore_model=restore_model)
     elif model == 'dql':
+        return DeepQLearningTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, memory_size=5000, batch_size=32,
+                                    layer_1_nodes=128, layer_2_nodes=128, model_name=model_name_with_id, restore_model=restore_model)
+    elif model == 'dqlk':
         return KerasDeepQLearningTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, memory_size=5000, batch_size=32,
                                          layer_1_nodes=128, layer_2_nodes=128, model_name=model_name_with_id, restore_model=restore_model)
     elif model == 'dqli':
         return DeepQLearningImprovedTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, memory_size=5000,
                                             batch_size=32, layer_1_nodes=128, layer_2_nodes=128, model_name=model_name_with_id,
                                             restore_model=restore_model)
-    elif model == 'pol':
-        return PolicyGradientsTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, layer_1_nodes=128,
-                                      layer_2_nodes=128, discount_rate=0.95, learning_rate=0.001, model_name=model_name_with_id,
-                                      restore_model=restore_model)
-    elif model == 'poli':
-        return PolicyGradientsAgentBatchTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, layer_1_nodes=128,
-                                                layer_2_nodes=128, discount_rate=0.99, learning_rate=0.01, model_name=model_name_with_id,
-                                                restore_model=restore_model)
     elif model == 'a2c':
         return ActorCriticTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, layer_1_nodes=128,
                                   layer_2_nodes=128, model_name=model_name_with_id, restore_model=restore_model)

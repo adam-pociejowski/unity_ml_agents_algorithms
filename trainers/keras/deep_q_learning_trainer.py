@@ -11,17 +11,16 @@ class KerasDeepQLearningTrainer(KerasAgentTrainer):
         self.layer_1_nodes = layer_1_nodes
         self.layer_2_nodes = layer_2_nodes
         super().__init__(brain, brain_name, input_num, output_num, agents_num, model_name=model_name, memory_size=memory_size, batch_size=batch_size,
-                         restore_model=restore_model)
+                         restore_model=restore_model, discount_rate=0.9)
         self.learn_step_counter = 0
 
     def get_actions(self, observation):
-        # if np.random.random() > self.epsilon:
-        #     prediction = self.eval_network.predict(observation, batch_size=self.agents_num)
-        #     actions = np.argmax(prediction, axis=1)
-        # else:
-        #     actions = np.random.randint(self.output_num, size=self.agents_num)
-        prediction = self.eval_network.predict(observation, batch_size=self.agents_num)
-        return np.argmax(prediction, axis=1)
+        if np.random.random() > self.epsilon:
+            prediction = self.eval_network.predict(observation, batch_size=self.agents_num)
+            actions = np.argmax(prediction, axis=1)
+        else:
+            actions = np.random.randint(self.output_num, size=self.agents_num)
+        return actions
 
     def post_episode_actions(self, rewards, episode):
         self.eval_network.save_weights(self.models_dir + "/eval_network.h5")
