@@ -4,10 +4,10 @@ from keras.optimizers import Adam
 from trainers.keras.keras_agent_trainer import *
 
 
-class DeepQLearningTrainer(KerasAgentTrainer):
+class KerasDeepQLearningTrainer(KerasAgentTrainer):
 
     def __init__(self, brain, brain_name, input_num, output_num, agents_num, memory_size=5000, batch_size=32, layer_1_nodes=128, layer_2_nodes=128,
-                 model_name='deep_q_learning', restore_model=False):
+                 model_name='deep_q_learning_keras', restore_model=False):
         self.layer_1_nodes = layer_1_nodes
         self.layer_2_nodes = layer_2_nodes
         super().__init__(brain, brain_name, input_num, output_num, agents_num, model_name=model_name, memory_size=memory_size, batch_size=batch_size,
@@ -15,13 +15,13 @@ class DeepQLearningTrainer(KerasAgentTrainer):
         self.learn_step_counter = 0
 
     def get_actions(self, observation):
-        self.epsilon = 0
-        if np.random.random() > self.epsilon:
-            prediction = self.eval_network.predict(observation, batch_size=self.agents_num)
-            actions = np.argmax(prediction, axis=1)
-        else:
-            actions = np.random.randint(self.output_num, size=self.agents_num)
-        return actions
+        # if np.random.random() > self.epsilon:
+        #     prediction = self.eval_network.predict(observation, batch_size=self.agents_num)
+        #     actions = np.argmax(prediction, axis=1)
+        # else:
+        #     actions = np.random.randint(self.output_num, size=self.agents_num)
+        prediction = self.eval_network.predict(observation, batch_size=self.agents_num)
+        return np.argmax(prediction, axis=1)
 
     def post_episode_actions(self, rewards, episode):
         self.eval_network.save_weights(self.models_dir + "/eval_network.h5")

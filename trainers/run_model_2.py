@@ -9,7 +9,9 @@ from trainers.algorithms.genetic.genetic_algorithm_trainer_old import *
 from trainers.algorithms.genetic.genetic_algorithm_trainer import *
 from trainers.algorithms.policy_gradients.policy_gradients_agent_batch_trainer import *
 from trainers.algorithms.policy_gradients.policy_gradients_trainer import *
-from trainers.keras.deep_q_learning_improved_trainer import *
+from trainers.algorithms.deep_q_learning.deep_q_learning_improved_trainer import *
+# from trainers.algorithms.deep_q_learning.deep_q_learning_trainer import *
+# from trainers.keras.deep_q_learning_improved_trainer import *
 from trainers.keras.deep_q_learning_trainer import *
 from trainers.keras.actor_critic_trainer import *
 from trainers.trainer_python_api_utils import *
@@ -74,8 +76,8 @@ def _choose_trainer(env, model_id):
         return GeneticAlgorithmTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, layer_1_nodes=64,
                                        layer_2_nodes=64, elite_chromosomes=8, model_name=model_name_with_id, restore_model=restore_model)
     elif model == 'dql':
-        return DeepQLearningTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, memory_size=5000, batch_size=32,
-                                    layer_1_nodes=128, layer_2_nodes=128, model_name=model_name_with_id, restore_model=restore_model)
+        return KerasDeepQLearningTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, memory_size=5000, batch_size=32,
+                                         layer_1_nodes=128, layer_2_nodes=128, model_name=model_name_with_id, restore_model=restore_model)
     elif model == 'dqli':
         return DeepQLearningImprovedTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, memory_size=5000,
                                             batch_size=32, layer_1_nodes=128, layer_2_nodes=128, model_name=model_name_with_id,

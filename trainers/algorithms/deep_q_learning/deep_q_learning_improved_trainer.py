@@ -46,8 +46,8 @@ class DeepQLearningImprovedTrainer(AgentTrainer):
             self.episode_step_counter += 1
 
     def _replace_target_net_parameters(self):
-        t_params = tf.get_collection('target_net_params')
-        e_params = tf.get_collection('eval_net_params')
+        t_params = tf.get_collection('target_net_params' + self.model_name)
+        e_params = tf.get_collection('eval_net_params' + self.model_name)
         self.sess.run([tf.assign(t, e) for t, e in zip(t_params, e_params)])
 
     def _train(self):
@@ -71,11 +71,6 @@ class DeepQLearningImprovedTrainer(AgentTrainer):
         q_value_copy = q_value.copy()
         batch_indexes = np.arange(self.batch_size, dtype=np.int32)
         actions_indexes = actions_sample.astype(int)
-
-        print(f'q_target: {q_target}')
-        print(f'max: {np.max(q_target, axis=0)}')
-        res = rewards_sample + self.discount_rate * np.max(q_target, axis=0)
-        print(f'result: {res}')
 
         q_value_copy[actions_indexes, batch_indexes] = rewards_sample + self.discount_rate * np.max(q_target, axis=0)
         _, self.current_loss = self.sess.run([self.train_op, self.loss],
@@ -102,22 +97,22 @@ class DeepQLearningImprovedTrainer(AgentTrainer):
         self.Y = tf.placeholder(tf.float32, [self.output_num, None], name='Q_target')
         self.learning_rate_placeholder = tf.placeholder(tf.float32, [], name='learning_rate')
 
-        with tf.variable_scope('eval_net'):
-            c_names = ['eval_net_params', tf.GraphKeys.GLOBAL_VARIABLES]
-            with tf.variable_scope('parameters'):
+        with tf.variable_scope('eval_net' + self.model_name):
+            c_names = ['eval_net_params' + self.model_name, tf.GraphKeys.GLOBAL_VARIABLES]
+            with tf.variable_scope('parameters' + self.model_name):
                 W1 = tf.get_variable('W1', [layer_1_nodes, self.input_num], initializer=W_init, collections=c_names)
                 b1 = tf.get_variable('b1', [layer_1_nodes, 1], initializer=b_init, collections=c_names)
                 W2 = tf.get_variable('W2', [layer_2_nodes, layer_1_nodes], initializer=W_init, collections=c_names)
                 b2 = tf.get_variable('b2', [layer_2_nodes, 1], initializer=b_init, collections=c_names)
                 W3 = tf.get_variable('W3', [self.output_num, layer_2_nodes], initializer=W_init, collections=c_names)
                 b3 = tf.get_variable('b3', [self.output_num, 1], initializer=b_init, collections=c_names)
-            with tf.variable_scope('layer_1'):
+            with tf.variable_scope('layer_1' + self.model_name):
                 Z1 = tf.matmul(W1, self.X) + b1
                 A1 = tf.nn.relu(Z1)
-            with tf.variable_scope('layer_2'):
+            with tf.variable_scope('layer_2' + self.model_name):
                 Z2 = tf.matmul(W2, A1) + b2
                 A2 = tf.nn.relu(Z2)
-            with tf.variable_scope('layer_3'):
+            with tf.variable_scope('layer_3' + self.model_name):
                 Z3 = tf.matmul(W3, A2) + b3
                 self.Q_value = Z3
 
@@ -129,21 +124,21 @@ class DeepQLearningImprovedTrainer(AgentTrainer):
     def _build_target_network(self, layer_1_nodes, layer_2_nodes, W_init, b_init):
         self.X_ = tf.placeholder(tf.float32, [self.input_num, None], name="s_")
 
-        with tf.variable_scope('target_net'):
-            c_names = ['target_net_params', tf.GraphKeys.GLOBAL_VARIABLES]
-            with tf.variable_scope('parameters'):
+        with tf.variable_scope('target_net' + self.model_name):
+            c_names = ['target_net_params' + self.model_name, tf.GraphKeys.GLOBAL_VARIABLES]
+            with tf.variable_scope('parameters' + self.model_name):
                 W1 = tf.get_variable('W1', [layer_1_nodes, self.input_num], initializer=W_init, collections=c_names)
                 b1 = tf.get_variable('b1', [layer_1_nodes, 1], initializer=b_init, collections=c_names)
                 W2 = tf.get_variable('W2', [layer_2_nodes, layer_1_nodes], initializer=W_init, collections=c_names)
                 b2 = tf.get_variable('b2', [layer_2_nodes, 1], initializer=b_init, collections=c_names)
                 W3 = tf.get_variable('W3', [self.output_num, layer_2_nodes], initializer=W_init, collections=c_names)
                 b3 = tf.get_variable('b3', [self.output_num, 1], initializer=b_init, collections=c_names)
-            with tf.variable_scope('layer_1'):
+            with tf.variable_scope('layer_1' + self.model_name):
                 Z1 = tf.matmul(W1, self.X_) + b1
                 A1 = tf.nn.relu(Z1)
-            with tf.variable_scope('layer_2'):
+            with tf.variable_scope('layer_2' + self.model_name):
                 Z2 = tf.matmul(W2, A1) + b2
                 A2 = tf.nn.relu(Z2)
-            with tf.variable_scope('layer_3'):
+            with tf.variable_scope('layer_3' + self.model_name):
                 Z3 = tf.matmul(W3, A2) + b3
                 self.Q_target = Z3

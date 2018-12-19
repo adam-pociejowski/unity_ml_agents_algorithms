@@ -7,7 +7,7 @@ import abc
 
 class KerasAgentTrainer(AgentTrainer):
     def __init__(self, brain, brain_name, input_num, output_num, agents_num, model_name, memory_size=5000, batch_size=32, restore_model=False,
-                 min_memory_size=1000, discount_rate=0.99):
+                 min_memory_size=2000, discount_rate=0.99):
         super().__init__(brain, brain_name, input_num, output_num, agents_num, model_name=model_name, memory_size=memory_size, batch_size=batch_size,
                          restore_model=restore_model, discount_rate=discount_rate)
         self.min_memory_size = min_memory_size
@@ -28,6 +28,7 @@ class KerasAgentTrainer(AgentTrainer):
         self._store_memory(observations, actions, rewards, new_observations)
         if self.episode_step_counter > self.min_memory_size:
             self._train()
+        super().post_step_actions(observations, actions, rewards, new_observations)
 
     def post_episode_actions(self, rewards, episode):
         self._delete_objects()
@@ -52,7 +53,8 @@ class KerasAgentTrainer(AgentTrainer):
             self.reward_memory[index] = rewards[i]
             self.observation_memory[index, :] = observations[i]
             self.new_observation_memory[index, :] = new_observations[i]
-            self.episode_step_counter += 1
+
+        self.episode_step_counter += self.agents_num
 
     def _delete_objects(self):
         del self.action_memory

@@ -22,11 +22,6 @@ class ActorCriticTrainer(KerasAgentTrainer):
             actions.append(np.random.choice(self.output_num, 1, p=policy[i])[0])
         return actions
 
-    def post_step_actions(self, observations, actions, rewards, new_observations):
-        self._store_memory(observations, actions, rewards, new_observations)
-        if self.episode_step_counter > 1000:
-            self._train()
-
     def post_episode_actions(self, rewards, episode):
         self.actor.save_weights("models/"+self.model_name+"/actor.h5")
         self.critic.save_weights("models/"+self.model_name+"/critic.h5")

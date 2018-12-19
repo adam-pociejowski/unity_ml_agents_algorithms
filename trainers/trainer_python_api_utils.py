@@ -98,17 +98,14 @@ def log_stats(trainers, rewards_log_copy, rewards, episode, step, episode_max_le
 
 
 def save_summary(trainer, avg_reward, best_reward, step):
-    summary, _, _, _, _, _ = sess.run([merged, mean_reward, max_reward, learning_rate, random_action_chance, loss],
-                                      feed_dict={mean_reward_placeholder: avg_reward,
-                                                 max_reward_placeholder: best_reward,
-                                                 loss_placeholder: trainer.current_loss,
-                                                 learning_rate_placeholder: trainer.learning_rate,
-                                                 random_action_chance_placeholder: trainer.epsilon})
+    summary, _, _, _, _, _ = trainer.sess.run([merged, mean_reward, max_reward, learning_rate, random_action_chance, loss],
+                                              feed_dict={mean_reward_placeholder: avg_reward,
+                                                         max_reward_placeholder: best_reward,
+                                                         loss_placeholder: trainer.current_loss,
+                                                         learning_rate_placeholder: trainer.learning_rate,
+                                                         random_action_chance_placeholder: trainer.epsilon})
     trainer.summary_writer.add_summary(summary, step)
 
-
-sess = tf.Session()
-init = tf.global_variables_initializer()
 
 with tf.name_scope('Summaries'):
     mean_reward_placeholder = tf.placeholder(tf.float32, shape=None, name='mean_reward')
