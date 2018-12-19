@@ -44,7 +44,8 @@ class AgentTrainer:
         self._init_episode()
 
     def _init_tensorflow(self):
-        self.saver = tf.train.Saver()
+        if self.use_tf:
+            self.saver = tf.train.Saver()
         if self.restore_model:
             self._restore_model()
 

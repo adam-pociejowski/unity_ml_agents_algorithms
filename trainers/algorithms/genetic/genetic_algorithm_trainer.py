@@ -123,7 +123,8 @@ class GeneticAlgorithmTrainer(AgentTrainer):
         return actions
 
     def _save_model(self, chromosome):
-        model_to_save = np.asarray(chromosome[0])
-        model_to_save = np.append(model_to_save, np.asarray(chromosome[1]).reshape(self.output_num, self.layer_2_nodes), axis=0)
-        df = pd.DataFrame(model_to_save)
-        df.to_csv('models/' + self.brain_name + '.csv', index=False)
+        pass
+        # model_to_save = np.asarray(chromosome[0])
+        # model_to_save = np.append(model_to_save, np.asarray(chromosome[1]).reshape(self.output_num, self.layer_2_nodes), axis=0)
+        # df = pd.DataFrame(model_to_save)
+        # df.to_csv('models/' + self.brain_name + '.csv', index=False)
