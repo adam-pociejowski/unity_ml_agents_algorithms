@@ -3,6 +3,7 @@ from trainers.algorithms.deep_q_learning.deep_q_learning_improved_trainer import
 from trainers.algorithms.deep_q_learning.deep_q_learning_trainer import *
 from trainers.algorithms.genetic.genetic_algorithm_trainer import *
 from trainers.algorithms.genetic.genetic_algorithm_trainer_old import *
+from trainers.algorithms.actor_critic.actor_critic_trainer import *
 from trainers.keras.actor_critic_trainer import *
 from trainers.keras.deep_q_learning_improved_trainer import *
 from trainers.keras.deep_q_learning_trainer import *
@@ -10,7 +11,7 @@ from trainers.trainer_python_api_utils import *
 
 if __name__ == '__main__':
     env_name = "../../env/single-64-training/Tanks"
-    env = UnityEnvironment(worker_id=0, file_name=env_name, no_graphics=True)
+    env = UnityEnvironment(worker_id=1, file_name=env_name, no_graphics=True)
     print('Brains: {}'.format(env.brains))
     genetic_trainer = GeneticAlgorithmOldTrainer(
                             env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, elite_chromosomes=6,
@@ -28,10 +29,12 @@ if __name__ == '__main__':
                             env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, memory_size=5000, batch_size=32,
                             layer_1_nodes=128, layer_2_nodes=128)
 
+    actor_critic = ActorCriticTrainer(
+                            env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, layer_1_nodes=128, layer_2_nodes=128)
+
     ########################### KERAS
-    actor_critic_keras = ActorCriticTrainer(
-                            env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, layer_1_nodes=128, layer_2_nodes=128,
-                            discount_rate=0.99)
+    actor_critic_keras = KerasActorCriticTrainer(
+                            env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, layer_1_nodes=128, layer_2_nodes=128)
 
     q_learn_trainer_keras = KerasDeepQLearningTrainer(
                             env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, memory_size=5000, batch_size=32,
@@ -41,7 +44,7 @@ if __name__ == '__main__':
                             env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, memory_size=5000, batch_size=32,
                             layer_1_nodes=128, layer_2_nodes=128)
 
-    trainers = [q_learn_improved_trainer]
+    trainers = [actor_critic_keras]
     for i in range(len(trainers)):
         trainers[i].init()
 

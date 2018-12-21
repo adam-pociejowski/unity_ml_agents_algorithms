@@ -9,6 +9,7 @@ from trainers.algorithms.genetic.genetic_algorithm_trainer_old import *
 from trainers.algorithms.genetic.genetic_algorithm_trainer import *
 from trainers.algorithms.deep_q_learning.deep_q_learning_improved_trainer import *
 from trainers.algorithms.deep_q_learning.deep_q_learning_trainer import *
+from trainers.algorithms.actor_critic.actor_critic_trainer import *
 from trainers.keras.deep_q_learning_improved_trainer import *
 from trainers.keras.deep_q_learning_trainer import *
 from trainers.keras.actor_critic_trainer import *
@@ -52,27 +53,33 @@ def start_training():
 
 def _choose_trainer(env, model_id):
     model_name_with_id = model_dict[model] + '_' + str(model_id)
+    brain = env.brains['PPOBrain']
+    brain_name = 'PPOBrain'
+    
     if model == 'ga_old':
-        return GeneticAlgorithmOldTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, elite_chromosomes=6,
-                                          hidden_layer_nodes=128, model_name=model_name_with_id)
+        return GeneticAlgorithmOldTrainer(brain, brain_name, input_num=87, output_num=6, agents_num=64, elite_chromosomes=6, hidden_layer_nodes=128,
+                                          model_name=model_name_with_id)
     elif model == 'ga':
-        return GeneticAlgorithmTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, layer_1_nodes=64,
-                                       layer_2_nodes=64, elite_chromosomes=8, model_name=model_name_with_id)
+        return GeneticAlgorithmTrainer(brain, brain_name, input_num=87, output_num=6, agents_num=64, layer_1_nodes=64, layer_2_nodes=64,
+                                       elite_chromosomes=8, model_name=model_name_with_id)
     elif model == 'dql':
-        return DeepQLearningTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, memory_size=5000, batch_size=32,
-                                    layer_1_nodes=128, layer_2_nodes=128, model_name=model_name_with_id)
+        return DeepQLearningTrainer(brain, brain_name, input_num=87, output_num=6, agents_num=64, memory_size=5000, batch_size=32, layer_1_nodes=128,
+                                    layer_2_nodes=128, model_name=model_name_with_id)
     elif model == 'dqlk':
-        return KerasDeepQLearningTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, memory_size=5000,
-                                         batch_size=32, layer_1_nodes=128, layer_2_nodes=128, model_name=model_name_with_id)
+        return KerasDeepQLearningTrainer(brain, brain_name, input_num=87, output_num=6, agents_num=64, memory_size=5000, batch_size=32,
+                                         layer_1_nodes=128, layer_2_nodes=128, model_name=model_name_with_id)
     elif model == 'dqli':
-        return DeepQLearningImprovedTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, memory_size=5000,
-                                            batch_size=32, layer_1_nodes=128, layer_2_nodes=128, model_name=model_name_with_id)
+        return DeepQLearningImprovedTrainer(brain, brain_name, input_num=87, output_num=6, agents_num=64, memory_size=5000, batch_size=32,
+                                            layer_1_nodes=128, layer_2_nodes=128, model_name=model_name_with_id)
     elif model == 'dqlik':
-        return KerasDeepQLearningImprovedTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, memory_size=5000,
-                                                 batch_size=32, layer_1_nodes=128, layer_2_nodes=128, model_name=model_name_with_id)
+        return KerasDeepQLearningImprovedTrainer(brain, brain_name, input_num=87, output_num=6, agents_num=64, memory_size=5000, batch_size=32,
+                                                 layer_1_nodes=128, layer_2_nodes=128, model_name=model_name_with_id)
     elif model == 'a2c':
-        return ActorCriticTrainer(env.brains['PPOBrain'], 'PPOBrain', input_num=87, output_num=6, agents_num=64, layer_1_nodes=128,
-                                  layer_2_nodes=128, model_name=model_name_with_id)
+        return ActorCriticTrainer(brain, brain_name, input_num=87, output_num=6, agents_num=64, layer_1_nodes=128, layer_2_nodes=128,
+                                  model_name=model_name_with_id)
+    elif model == 'a2ck':
+        return KerasActorCriticTrainer(brain, brain_name, input_num=87, output_num=6, agents_num=64, layer_1_nodes=128, layer_2_nodes=128,
+                                       model_name=model_name_with_id)
 
 
 if __name__ == '__main__':
